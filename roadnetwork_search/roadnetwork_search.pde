@@ -7,15 +7,31 @@
 // https://en.wikipedia.org/wiki/A*_search_algorithm
 //
 //
-//
+// 701 749
+// 776
+// 786
+// 850
+// 875
+// 886
+// 900
+// 932
+// 12
+// 64
+// 149
+// 174
+// 214
 
 String[] edgeStrings;
 Environment roadmap = new Environment();
 float roadmapScale = 0.10;
-int n1;
-int n2;
+int n1 = 0;
+int n2 = 0;
 int counter = 100;
 ArrayList<Node> savedNodes = new ArrayList<Node>();
+ArrayList<Node> testNodes = new ArrayList<Node>();
+
+boolean testAllRoutes = false;
+boolean testFewRoutes = true;
 
 void setup() {
   size(600, 800, P3D);
@@ -24,30 +40,81 @@ void setup() {
   edgeStrings = lines;
   roadmap.createEdges();
   
+
+
+  if (testFewRoutes) {
+    //testNodes.add(roadmap.getNodes().get(701));
+    //testNodes.add(roadmap.getNodes().get(749));
+    //testNodes.add(roadmap.getNodes().get(776));
+    testNodes.add(roadmap.getNodes().get(786));
+    testNodes.add(roadmap.getNodes().get(850));
+    testNodes.add(roadmap.getNodes().get(875));
+    testNodes.add(roadmap.getNodes().get(886));
+    testNodes.add(roadmap.getNodes().get(900));
+    testNodes.add(roadmap.getNodes().get(932));
+    testNodes.add(roadmap.getNodes().get(12));
+    testNodes.add(roadmap.getNodes().get(64));
+    testNodes.add(roadmap.getNodes().get(149));
+    testNodes.add(roadmap.getNodes().get(174));
+    testNodes.add(roadmap.getNodes().get(214));
+    // 15
+    // 16
+    // 17
+    // 18
+    // 19
+    // 20
+    
+    
+  }
+  
 }
+
 
 
 void draw() {
   lights();
   background(255);
   
-  if (counter >= 25) {
-    if (n1 == n2) {
+  if (testAllRoutes) {
+    if (counter >= 25) {
+      if (n1 == n2) {
+        n2++;
+      }
+      if (n2 == roadmap.getNodes().size()) {
+        n2 = 0;
+        n1++;
+      }
+      if (n1 == roadmap.getNodes().size()) {
+        n1 = 0;
+      }
+  
+      perform_a_Star(n1,n2);
       n2++;
+      counter = 0;
+    } else {
+      counter++;
     }
-    if (n2 == roadmap.getNodes().size()) {
-      n2 = 0;
-      n1++;
+  } else if (testFewRoutes) {
+    if (counter >= 25) {
+      if (n1 == n2) {
+        n2++;
+      }
+      if (n2 == testNodes.size()) {
+        n2 = 0;
+        n1++;
+      }
+      if (n1 == testNodes.size()) {
+        n1 = 0;
+      }
+      println("n1: " + n1 + ", n2: " + n2);
+      perform_a_Star(testNodes.get(n1).getIndex(),testNodes.get(n2).getIndex());
+      n2++;
+      counter = 0;
+      
+    } else {
+      counter++;
+      println("n1: " + n1 + ", n2: " + n2);
     }
-    if (n1 == roadmap.getNodes().size()) {
-      n1 = 0;
-    }
-
-    perform_a_Star(n1,n2);
-    n2++;
-    counter = 0;
-  } else {
-    counter++;
   }
   
   roadmap.drawEnvironment();
@@ -369,6 +436,7 @@ ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, 
         openSetIndex = i;
       }
     }
+    
     /*
     println("CHECKPOINT 4: " + "currentIndex : " + currentIndex + ", openSetSize: " + openSet.size() + ", closedSetSize: " + closedSet.size());
     if (nodes.get(currentIndex).getPrev() != null) {
