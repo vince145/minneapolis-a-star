@@ -22,19 +22,32 @@
 // 214
 
 String[] edgeStrings;
+ArrayList<String> outputStrings = new ArrayList<String>();
 Environment roadmap = new Environment();
-float roadmapScale = 0.10;
+
+float roadmapScale = 0.1f;
+int numberOfHeuristics = 5;
+
 int n1 = 0;
 int n2 = 0;
+int h1 = 0;
+float recentF = 0;
+int recentPathSize = 0;
+int recentNodesInClosedSet = 0;
+int recentNodesInOpenSet = 0;
+
+
 int counter = 100;
 ArrayList<Node> savedNodes = new ArrayList<Node>();
 ArrayList<Node> testNodes = new ArrayList<Node>();
 
 boolean testAllRoutes = false;
 boolean testFewRoutes = true;
+boolean resultsSaved = false;
+boolean testByHeuristic = true;
 
-void setup() {
-  size(600, 800, P3D);
+public void setup() {
+  size(600,800,P3D);
   fill(0);
   String[] lines = loadStrings("map.txt");
   edgeStrings = lines;
@@ -43,27 +56,31 @@ void setup() {
 
 
   if (testFewRoutes) {
-    //testNodes.add(roadmap.getNodes().get(701));
-    //testNodes.add(roadmap.getNodes().get(749));
-    //testNodes.add(roadmap.getNodes().get(776));
+    testNodes.add(roadmap.getNodes().get(0));
+    // 1 - 5
+    testNodes.add(roadmap.getNodes().get(701));
+    testNodes.add(roadmap.getNodes().get(749));
+    testNodes.add(roadmap.getNodes().get(776));
     testNodes.add(roadmap.getNodes().get(786));
     testNodes.add(roadmap.getNodes().get(850));
+    // 6 - 10
     testNodes.add(roadmap.getNodes().get(875));
     testNodes.add(roadmap.getNodes().get(886));
     testNodes.add(roadmap.getNodes().get(900));
     testNodes.add(roadmap.getNodes().get(932));
     testNodes.add(roadmap.getNodes().get(12));
+    // 11 - 15
     testNodes.add(roadmap.getNodes().get(64));
     testNodes.add(roadmap.getNodes().get(149));
     testNodes.add(roadmap.getNodes().get(174));
     testNodes.add(roadmap.getNodes().get(214));
-    // 15
-    // 16
-    // 17
-    // 18
-    // 19
-    // 20
-    
+    testNodes.add(roadmap.getNodes().get(100));
+    // 16 - 20
+    testNodes.add(roadmap.getNodes().get(201));
+    testNodes.add(roadmap.getNodes().get(300));
+    testNodes.add(roadmap.getNodes().get(400));
+    testNodes.add(roadmap.getNodes().get(500));
+    testNodes.add(roadmap.getNodes().get(600));
     
   }
   
@@ -71,7 +88,7 @@ void setup() {
 
 
 
-void draw() {
+public void draw() {
   lights();
   background(255);
   
@@ -88,43 +105,99 @@ void draw() {
         n1 = 0;
       }
   
-      perform_a_Star(n1,n2);
+      perform_a_Star(n1,n2,1);
       n2++;
       counter = 0;
     } else {
       counter++;
     }
-  } else if (testFewRoutes) {
-    if (counter >= 25) {
+  } else if (testFewRoutes && !testByHeuristic && h1 < numberOfHeuristics) {
+    if (counter >= 1) {
       if (n1 == n2) {
         n2++;
       }
-      if (n2 == testNodes.size()) {
+      if (n2 >= testNodes.size()) {
         n2 = 0;
-        n1++;
+        h1++;
+        if (n1 == n2) {
+          n2++;
+        }
       }
-      if (n1 == testNodes.size()) {
+      if (n1 >= testNodes.size()) {
         n1 = 0;
       }
-      println("n1: " + n1 + ", n2: " + n2);
-      perform_a_Star(testNodes.get(n1).getIndex(),testNodes.get(n2).getIndex());
+      if (h1 < 5) {
+        perform_a_Star(testNodes.get(n1).getIndex(),testNodes.get(n2).getIndex(), h1);
+      }
       n2++;
       counter = 0;
-      
     } else {
       counter++;
-      println("n1: " + n1 + ", n2: " + n2);
     }
+      
+    } else if (testFewRoutes && testByHeuristic && n2 < testNodes.size()) {
+      if (counter >= 1) {
+        if (n1 == n2) {
+          n2++;
+        }
+        if (h1 >= numberOfHeuristics) {
+          h1 = 0;
+          n2++;
+          if (n1 == n2) {
+            n2++;
+          }
+        }
+        if (n1 >= testNodes.size()) {
+          n1 = 0;
+        }
+        if (n2 < testNodes.size()) {
+          perform_a_Star(testNodes.get(n1).getIndex(),testNodes.get(n2).getIndex(), h1);
+        }
+        h1++;
+        counter = 0;
+      
+      } else {
+        counter++;
+        //println("n1: " + n1 + ", n2: " + n2);
+      }
+  } else if (!resultsSaved) {
+    if (!testByHeuristic) {
+      String[] resultStrings = new String[outputStrings.size()];
+      for (int i = 0; i < outputStrings.size(); i++) {
+        resultStrings[i] = outputStrings.get(i);
+      }
+      saveStrings("resultsByHeuristic.txt", resultStrings);
+      
+      int resultsCounter = 0;
+      String[] resultStrings2 = new String[outputStrings.size()];
+      for (int i = 0; i < testNodes.size()-1; i++) {
+        for (int j = 0; j < h1; j++) {
+          resultStrings2[resultsCounter] = outputStrings.get((testNodes.size()-1)*j + i);
+          resultsCounter++;
+        }
+      }
+      saveStrings("resultsByPath.txt", resultStrings2);
+    } else {
+      String[] resultStrings = new String[outputStrings.size()];
+      for (int i = 0; i < outputStrings.size(); i++) {
+        resultStrings[i] = outputStrings.get(i);
+      }
+      saveStrings("resultsByHeuristic.txt", resultStrings);
+    }
+    resultsSaved = true;
   }
   
   roadmap.drawEnvironment();
-  
+  text("Start : " + PApplet.parseInt(testNodes.get(n1).getIndex()) + ", Goal: " + PApplet.parseInt(testNodes.get(n2-1).getIndex()), width*0.1f, height*0.9f, 0);
+  text("f(goal) : " + recentF + ", PathSize: " + PApplet.parseInt(recentPathSize), width*0.1f, height*0.92f, 0);
+  text("NodesInClosedSet : " + PApplet.parseInt(recentNodesInClosedSet) + ", NodesInOpenSet : " + PApplet.parseInt(recentNodesInOpenSet), width*0.1f, height*0.94f, 0);
+  text("Heuristic : " + h1, width*0.1f, height*0.96f, 0);
 }
 
-int perform_a_Star(int start, int goal) {
+int perform_a_Star(int start, int goal, int heuristic) {
   ArrayList<Edge> edges = roadmap.getEdges();
   ArrayList<Node> nodes = roadmap.getNodes();
-  ArrayList<Node> shortestPath = a_Star(nodes, edges, start, goal);
+  ArrayList<Node> shortestPath = a_Star(nodes, edges, start, goal, heuristic);
   for (int i = 0; i < savedNodes.size(); i++) {
     savedNodes.get(i).setType(0);
     savedNodes.remove(i);
@@ -395,7 +468,7 @@ float heuristic_cost_estimate(int type, Node A, Node B) {
   return 0;
 }
 
-ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, int goal) {
+ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, int goal, int heuristic) {
   //println("CHECKPOINT 1");
   // Set of nodes already evaluated
   ArrayList<Integer> closedSet = new ArrayList<Integer>();
@@ -421,7 +494,7 @@ ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, 
       fScore[i] = 999999;
     } else if (nodes.get(i).compare(nodes.get(start))) {
       gScore[i] = 0;
-      fScore[i] = heuristic_cost_estimate(1, nodes.get(i), nodes.get(goal)); // add heuristic
+      fScore[i] = heuristic_cost_estimate(heuristic, nodes.get(i), nodes.get(goal)); // add heuristic
     }
   }
   
@@ -457,7 +530,14 @@ ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, 
         total_path.add(finalPathNode);
         finalPathNode = finalPathNode.getPrev();
       }
-      println("startIndex: " + start + ", goalIndex: " + goal + ", f: " + fScore[goal] + ", PathSize: " + total_path.size());
+      //println("startIndex: " + start + ", goalIndex: " + goal + ", f: " + fScore[goal] + ", PathSize: " + total_path.size());
+      recentF = fScore[goal];
+      recentPathSize = total_path.size();
+      recentNodesInClosedSet = closedSet.size();
+      recentNodesInOpenSet = openSet.size();
+      String s = heuristic + " " + start + " " + goal + " " + recentF + " " + recentPathSize + " " + recentNodesInClosedSet + " " + recentNodesInOpenSet;
+      outputStrings.add(s);
+      
       return total_path; // return path
     }
     
@@ -495,7 +575,7 @@ ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, 
             cameFrom[edges.get(i).getB().getIndex()] = edges.get(i).getA();
             edges.get(i).getB().setPrev(edges.get(i).getA());
             gScore[edges.get(i).getB().getIndex()] = tentative_gScore;
-            fScore[edges.get(i).getB().getIndex()] = gScore[edges.get(i).getB().getIndex()] + heuristic_cost_estimate(1, edges.get(i).getB(), nodes.get(goal)); // heuristic
+            fScore[edges.get(i).getB().getIndex()] = gScore[edges.get(i).getB().getIndex()] + heuristic_cost_estimate(heuristic, edges.get(i).getB(), nodes.get(goal)); // heuristic
           }
         }
       
@@ -528,7 +608,7 @@ ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, 
               cameFrom[edges.get(i).getA().getIndex()] = edges.get(i).getB();
               edges.get(i).getA().setPrev(edges.get(i).getB());
               gScore[edges.get(i).getA().getIndex()] = tentative_gScore;
-              fScore[edges.get(i).getA().getIndex()] = gScore[edges.get(i).getA().getIndex()] + heuristic_cost_estimate(1, edges.get(i).getA(), nodes.get(goal)); // heuristic
+              fScore[edges.get(i).getA().getIndex()] = gScore[edges.get(i).getA().getIndex()] + heuristic_cost_estimate(heuristic, edges.get(i).getA(), nodes.get(goal)); // heuristic
             }
           }
         }
