@@ -26,7 +26,7 @@ ArrayList<String> outputStrings = new ArrayList<String>();
 Environment roadmap = new Environment();
 
 float roadmapScale = 0.1f;
-int numberOfHeuristics = 5;
+int numberOfHeuristics = 7;
 
 int n1 = 0;
 int n2 = 0;
@@ -111,7 +111,7 @@ public void draw() {
     } else {
       counter++;
     }
-  } else if (testFewRoutes && !testByHeuristic && h1 < numberOfHeuristics) {
+  } else if (testFewRoutes && testByHeuristic && h1 < numberOfHeuristics) {
     if (counter >= 1) {
       if (n1 == n2) {
         n2++;
@@ -126,7 +126,7 @@ public void draw() {
       if (n1 >= testNodes.size()) {
         n1 = 0;
       }
-      if (h1 < 5) {
+      if (h1 < numberOfHeuristics) {
         perform_a_Star(testNodes.get(n1).getIndex(),testNodes.get(n2).getIndex(), h1);
       }
       n2++;
@@ -135,7 +135,7 @@ public void draw() {
       counter++;
     }
       
-    } else if (testFewRoutes && testByHeuristic && n2 < testNodes.size()) {
+    } else if (testFewRoutes && !testByHeuristic && n2 < testNodes.size()) {
       if (counter >= 1) {
         if (n1 == n2) {
           n2++;
@@ -161,13 +161,14 @@ public void draw() {
         //println("n1: " + n1 + ", n2: " + n2);
       }
   } else if (!resultsSaved) {
-    if (!testByHeuristic) {
+    if (testByHeuristic) {
       String[] resultStrings = new String[outputStrings.size()];
       for (int i = 0; i < outputStrings.size(); i++) {
         resultStrings[i] = outputStrings.get(i);
       }
       saveStrings("resultsByHeuristic.txt", resultStrings);
       
+      /*
       int resultsCounter = 0;
       String[] resultStrings2 = new String[outputStrings.size()];
       for (int i = 0; i < testNodes.size()-1; i++) {
@@ -177,12 +178,25 @@ public void draw() {
         }
       }
       saveStrings("resultsByPath.txt", resultStrings2);
+      */
     } else {
       String[] resultStrings = new String[outputStrings.size()];
       for (int i = 0; i < outputStrings.size(); i++) {
         resultStrings[i] = outputStrings.get(i);
       }
-      saveStrings("resultsByHeuristic.txt", resultStrings);
+      saveStrings("resultsByPath.txt", resultStrings);
+      
+      /*
+      int resultsCounter = 0;
+      String[] resultStrings2 = new String[outputStrings.size()];
+      for (int i = 0; i < testNodes.size()-1; i++) {
+        for (int j = 0; j < h1; j++) {
+          resultStrings2[resultsCounter] = outputStrings.get((testNodes.size()-1)*j + i);
+          resultsCounter++;
+        }
+      }
+      saveStrings("resultsByHeuristic.txt", resultStrings2);
+      */
     }
     resultsSaved = true;
   }
@@ -191,7 +205,25 @@ public void draw() {
   text("Start : " + PApplet.parseInt(testNodes.get(n1).getIndex()) + ", Goal: " + PApplet.parseInt(testNodes.get(n2-1).getIndex()), width*0.1f, height*0.9f, 0);
   text("f(goal) : " + recentF + ", PathSize: " + PApplet.parseInt(recentPathSize), width*0.1f, height*0.92f, 0);
   text("NodesInClosedSet : " + PApplet.parseInt(recentNodesInClosedSet) + ", NodesInOpenSet : " + PApplet.parseInt(recentNodesInOpenSet), width*0.1f, height*0.94f, 0);
-  text("Heuristic : " + h1, width*0.1f, height*0.96f, 0);
+  String heuristicName = "";
+  switch(h1-1) {
+    case 0:  heuristicName = "Uniform Cost";
+             break;
+    case 1:  heuristicName = "Euclidean";
+             break;
+    case 2:  heuristicName = "2x Weighted Euclidean";
+             break;
+    case 3:  heuristicName = "Manhattan";
+             break;
+    case 4:  heuristicName = "2x Weighted Manhattan";
+             break;
+    case 5:  heuristicName = "Diagonal";
+             break;
+    case 6:  heuristicName = "2x Weighted Diagonal";
+             break;
+    default:  break;
+  }
+  text("Heuristic : " + heuristicName, width*0.1f, height*0.96f, 0);
 }
 
 int perform_a_Star(int start, int goal, int heuristic) {
@@ -454,18 +486,31 @@ class Environment {
 }
 
 float heuristic_cost_estimate(int type, Node A, Node B) {
-  if (type == 0) {
-    return (sqrt(pow(B.getX()-A.getX(),2) + pow(B.getY()-A.getY(),2)));
-  } else if (type == 1) {
-    return (abs((B.getX() - A.getX())) + abs((B.getY() - A.getY())));
-  } else if (type == 2) {
-    return (abs((B.getX() - A.getX())) + abs((B.getY() - A.getY())))*2;
-  } else if (type == 3) {
-    return (abs((B.getX() - A.getX())) + abs((B.getY() - A.getY())))*4;
-  } else if (type == 4) {
-    return (abs((B.getX() - A.getX())) + abs((B.getY() - A.getY())))+100;
+  switch(type) {
+             // Uniform cost
+    case 0:  return 0;
+             // Euclidean
+    case 1:  return (sqrt(pow(B.getX()-A.getX(),2) + pow(B.getY()-A.getY(),2)));
+             // 2x Weighted Euclidean
+    case 2:  return (sqrt(pow(B.getX()-A.getX(),2) + pow(B.getY()-A.getY(),2)))*2;
+             // Manhattan
+    case 3:  return (abs((B.getX() - A.getX())) + abs((B.getY() - A.getY())));
+             // 2x Weighted Manhattan
+    case 4:  return (abs((B.getX() - A.getX())) + abs((B.getY() - A.getY())))*2;
+             // Diagonal
+    case 5:  if (abs(B.getX() - A.getX()) > abs(B.getY() - A.getY())) {
+               return abs(B.getX() - A.getX());
+             } else {
+               return abs(B.getY() - B.getY());
+             }
+             // 2x Weighted Diagonal
+    case 6:  if (abs(B.getX() - A.getX())*2 > abs(B.getY() - A.getY())*2) {
+               return abs(B.getX() - A.getX())*2;
+             } else {
+               return abs(B.getY() - B.getY())*2;
+             }
+    default:  return 0;
   }
-  return 0;
 }
 
 ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, int goal, int heuristic) {
@@ -535,7 +580,25 @@ ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, 
       recentPathSize = total_path.size();
       recentNodesInClosedSet = closedSet.size();
       recentNodesInOpenSet = openSet.size();
-      String s = heuristic + " " + start + " " + goal + " " + recentF + " " + recentPathSize + " " + recentNodesInClosedSet + " " + recentNodesInOpenSet;
+      String heuristicName = "";
+      switch(heuristic) {
+        case 0:  heuristicName = "Uniform Cost";
+                 break;
+        case 1:  heuristicName = "Euclidean";
+                 break;
+        case 2:  heuristicName = "2x Weighted Euclidean";
+                 break;
+        case 3:  heuristicName = "Manhattan";
+                 break;
+        case 4:  heuristicName = "2x Weighted Manhattan";
+                 break;
+        case 5:  heuristicName = "Diagonal";
+                 break;
+        case 6:  heuristicName = "2x Weighted Diagonal";
+                 break;
+        default:  break;
+      }
+      String s = heuristicName + " " + start + " " + goal + " " + recentF + " " + recentPathSize + " " + recentNodesInClosedSet + " " + recentNodesInOpenSet;
       outputStrings.add(s);
       
       return total_path; // return path
