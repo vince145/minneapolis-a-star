@@ -38,6 +38,7 @@ int recentNodesInOpenSet = 0;
 
 
 int counter = 100;
+int counterMax = 100;
 ArrayList<Node> savedNodes = new ArrayList<Node>();
 ArrayList<Node> testNodes = new ArrayList<Node>();
 
@@ -92,8 +93,11 @@ public void draw() {
   lights();
   background(255);
   
+  // Boolean allows for observing all possible routes between
+  // all existing nodes created in the state-space representation
+  // of Minneapolis's road network
   if (testAllRoutes) {
-    if (counter >= 25) {
+    if (counter >= counterMax) {
       if (n1 == n2) {
         n2++;
       }
@@ -112,7 +116,14 @@ public void draw() {
       counter++;
     }
   } else if (testFewRoutes && testByHeuristic && h1 < numberOfHeuristics) {
-    if (counter >= 1) {
+    // Allows for gathering results for one start node and the remaining nodes in
+    // the testNodes arrayList as different goal nodes.
+    // Gathers results / displays shortest paths in order of heuristics
+    // therefore, one heuristic is used for testing the selected goal nodes
+    // then the next heuristic is used for testing the selected goal nodes again.
+    //
+    // Allows for easier averaging of data based on heuristics.
+    if (counter >= counterMax) {
       if (n1 == n2) {
         n2++;
       }
@@ -134,9 +145,17 @@ public void draw() {
     } else {
       counter++;
     }
-      
+      // Allows for gathering results for one start node and the remaining nodes in
+      // the testNodes arrayList as different goal nodes.
+      // Gathers results / displays shortest paths in order of goal nodes
+      // therefore, one goal node is used for a path then each heuristic is tested
+      // for finding a shortest path to the goal node
+      // then the next goal node is used for testing each heuristic again.
+      //
+      // Allows for comparison between individual paths.
     } else if (testFewRoutes && !testByHeuristic && n2 < testNodes.size()) {
-      if (counter >= 1) {
+      
+      if (counter >= counterMax) {
         if (n1 == n2) {
           n2++;
         }
@@ -160,6 +179,10 @@ public void draw() {
         counter++;
         //println("n1: " + n1 + ", n2: " + n2);
       }
+  // Saves the results of the above testing method into a text document based on
+  // which testing method was used.
+  // resultsByHeuristics.txt saves the results if the testByHeuristic is turned on
+  // resultsByPath.txt saves the results if the testByPath is turned on
   } else if (!resultsSaved) {
     if (testByHeuristic) {
       String[] resultStrings = new String[outputStrings.size()];
@@ -167,41 +190,24 @@ public void draw() {
         resultStrings[i] = outputStrings.get(i);
       }
       saveStrings("resultsByHeuristic.txt", resultStrings);
-      
-      /*
-      int resultsCounter = 0;
-      String[] resultStrings2 = new String[outputStrings.size()];
-      for (int i = 0; i < testNodes.size()-1; i++) {
-        for (int j = 0; j < h1; j++) {
-          resultStrings2[resultsCounter] = outputStrings.get((testNodes.size()-1)*j + i);
-          resultsCounter++;
-        }
-      }
-      saveStrings("resultsByPath.txt", resultStrings2);
-      */
     } else {
       String[] resultStrings = new String[outputStrings.size()];
       for (int i = 0; i < outputStrings.size(); i++) {
         resultStrings[i] = outputStrings.get(i);
       }
       saveStrings("resultsByPath.txt", resultStrings);
-      
-      /*
-      int resultsCounter = 0;
-      String[] resultStrings2 = new String[outputStrings.size()];
-      for (int i = 0; i < testNodes.size()-1; i++) {
-        for (int j = 0; j < h1; j++) {
-          resultStrings2[resultsCounter] = outputStrings.get((testNodes.size()-1)*j + i);
-          resultsCounter++;
-        }
-      }
-      saveStrings("resultsByHeuristic.txt", resultStrings2);
-      */
     }
+    // Once the results are saved once, the resultsSaved boolean is turned on
+    // so they do not repeatively keep saving when no new results are being generated.
     resultsSaved = true;
   }
   
+  
+  // Draws the roadmap
   roadmap.drawEnvironment();
+  // Draws the text to display under the roadmap based on the characteristics of each
+  // shortest path found by respective heuristics used with A* on the 
+  // Minneapolis road network
   text("Start : " + PApplet.parseInt(testNodes.get(n1).getIndex()) + ", Goal: " + PApplet.parseInt(testNodes.get(n2-1).getIndex()), width*0.1f, height*0.9f, 0);
   text("f(goal) : " + recentF + ", PathSize: " + PApplet.parseInt(recentPathSize), width*0.1f, height*0.92f, 0);
   text("NodesInClosedSet : " + PApplet.parseInt(recentNodesInClosedSet) + ", NodesInOpenSet : " + PApplet.parseInt(recentNodesInOpenSet), width*0.1f, height*0.94f, 0);
@@ -226,6 +232,10 @@ public void draw() {
   text("Heuristic : " + heuristicName, width*0.1f, height*0.96f, 0);
 }
 
+// Calls the a_Star function using the approriate
+// start node, goal node, and heuristic to find
+// the shortest path on the
+// Minneapolis road network.
 int perform_a_Star(int start, int goal, int heuristic) {
   ArrayList<Edge> edges = roadmap.getEdges();
   ArrayList<Node> nodes = roadmap.getNodes();
@@ -245,6 +255,10 @@ int perform_a_Star(int start, int goal, int heuristic) {
     shortestPath.get(shortestPath.size()-1).setType(2);
     return 0;
   } else {
+    // Modifies the types of nodes for drawing different colors
+    // and displaying the start node and goal node as circles
+    // Goal node is represented by node type 1
+    // Start node is represented by node type 2
     savedNodes.add(nodes.get(start));
     savedNodes.add(nodes.get(goal));
     nodes.get(start).setType(2);
@@ -453,12 +467,19 @@ class Environment {
             edges.get(i).getB().getX()*roadmapScale-centerX, edges.get(i).getB().getY()*roadmapScale-centerY);
             
       translate(0,0,5);
+      
+      // Searchs through each edge to find which nodes are represented
+      // as start nodes and goal nodes to draw them as circles
+      
+      // Handles beginning nodes in edges
+      // Draws start node as a green circle
       if (edges.get(i).getA().getType() == 2) {
         pushMatrix();
         stroke(0,255,0);
         translate((edges.get(i).getA().getX()*roadmapScale)-centerX, edges.get(i).getA().getY()*roadmapScale-centerY, 2);
         sphere(3.5);
         popMatrix();
+      // Draws start node as a blue circle
       } else if (edges.get(i).getA().getType() == 1) {
         pushMatrix();
         stroke(0,0,255);
@@ -466,12 +487,16 @@ class Environment {
         sphere(3.5);
         popMatrix();
       }
+      
+      // Handles ending nodes in edges
+      // Draws start node as a green circle
       if (edges.get(i).getB().getType() == 2) {
         pushMatrix();
         stroke(0,255,0);
         translate((edges.get(i).getB().getX()*roadmapScale)-centerX, edges.get(i).getB().getY()*roadmapScale-centerY, 2);
         sphere(3.5);
         popMatrix();
+      // Draws goal node as a blue circle
       } else if (edges.get(i).getB().getType() == 1) {
         pushMatrix();
         stroke(0,0,255);
@@ -485,6 +510,8 @@ class Environment {
   }
 }
 
+// Handles calculating the value of h(Node A) with goal Node B.
+// for A*
 float heuristic_cost_estimate(int type, Node A, Node B) {
   switch(type) {
              // Uniform cost
@@ -512,6 +539,18 @@ float heuristic_cost_estimate(int type, Node A, Node B) {
     default:  return 0;
   }
 }
+
+// Implementation of a simple version of A* finding a shortest path between
+// a given start node and a goal node using a heuristic specified by an int
+
+// Heuristics:
+// 0 : Uniform Cost
+// 1 : Euclidean
+// 2 : 2x Weighted Euclidean
+// 3 : Manhattan
+// 4 : 2x Weighted Manhattan
+// 5 : Diagonal
+// 6 : 2x Weighted Diagonal
 
 ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, int goal, int heuristic) {
   //println("CHECKPOINT 1");
