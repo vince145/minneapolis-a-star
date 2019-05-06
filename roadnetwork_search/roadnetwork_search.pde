@@ -44,7 +44,7 @@ ArrayList<Node> testNodes = new ArrayList<Node>();
 boolean testAllRoutes = false;
 boolean testFewRoutes = true;
 boolean resultsSaved = false;
-boolean testByHeuristic = true;
+boolean testByHeuristic = false;
 
 public void setup() {
   size(600,800,P3D);
@@ -598,7 +598,7 @@ ArrayList<Node> a_Star(ArrayList<Node> nodes, ArrayList<Edge> edges, int start, 
                  break;
         default:  break;
       }
-      String s = heuristicName + " " + start + " " + goal + " " + recentF + " " + recentPathSize + " " + recentNodesInClosedSet + " " + recentNodesInOpenSet;
+      String s = heuristicName + "," + start + "," + goal + "," + recentF + "," + recentPathSize + "," + recentNodesInClosedSet + "," + recentNodesInOpenSet;
       outputStrings.add(s);
       
       return total_path; // return path
