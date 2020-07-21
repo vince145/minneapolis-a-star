@@ -14,3 +14,8 @@ for Minneapolis road network provided will not taken into consideration the diff
 roads, however, it will take into consideration one-ways and two way roads. ...."
 
 Continue reading... https://github.com/vince145/minneapolis-a-star/blob/master/traversing-minneapolis-with-a-star-vince145.pdf
+
+
+Example photo of MinneSearch, processing app using A* on road network of Minneapolis
+
+![MinneSearch Example](https://raw.githubusercontent.com/vince145/minneapolis-a-star/master/MinneSearch%20Example.PNG)
